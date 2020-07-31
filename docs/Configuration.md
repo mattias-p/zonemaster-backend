@@ -1,9 +1,15 @@
 # Configuration
 
-Zonemaster *Backend* is configured in
+Normally, Zonemaster *Backend* is configured as a whole from
 `/etc/zonemaster/backend_config.ini` (CentOS, Debian and Ubuntu) or
-`/usr/local/etc/zonemaster/backend_config.ini` (FreeBSD). Following
-[Installation instructions] will create the file with factory settings.
+`/usr/local/etc/zonemaster/backend_config.ini` (FreeBSD).
+Following the [installation instructions] will create the file with factory
+settings.
+
+If that path does not exist, a default configuration is read from a file that is
+installed as part of the Zonemaster-Backend distribution.
+Alternatively, the path of the configuration file can be overridden by setting
+the `ZONEMASTER_BACKEND_CONFIG_FILE` environment variable.
 
 Each section in `backend_config.ini` is documented below.
 
@@ -315,6 +321,7 @@ If the conversion results in zero minutes, then the default value is used.
 [DB.password]:                        #password
 [DB.user]:                            #user
 [Default JSON profile file]:          https://github.com/zonemaster/zonemaster-engine/blob/master/share/profile.json
+[File::ShareDir]:                     https://metacpan.org/pod/File::ShareDir
 [ISO 3166-1 alpha-2]:                 https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
 [ISO 639-1]:                          https://en.wikipedia.org/wiki/ISO_639-1
 [Installation instructions]:          Installation.md
