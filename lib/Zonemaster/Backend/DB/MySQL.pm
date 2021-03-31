@@ -195,13 +195,11 @@ sub test_results {
             undef, $new_results, $test_id );
     }
 
-    my $result;
-    my ( $hrefs ) = $self->dbh->selectall_hashref( "SELECT id, hash_id, CONVERT_TZ(`creation_time`, \@\@session.time_zone, '+00:00') AS creation_time, params, results FROM test_results WHERE hash_id=?", 'hash_id', undef, $test_id );
-    $result            = $hrefs->{$test_id};
-    $result->{params}  = decode_json( $result->{params} );
-    $result->{results} = decode_json( $result->{results} );
+    my $href = $self->dbh->selectrow_hashref( "SELECT id, hash_id, CONVERT_TZ(`creation_time`, \@\@session.time_zone, '+00:00') AS creation_time, params, results FROM test_results WHERE hash_id=?", undef, $test_id );
+    $href->{params}  = decode_json( $href->{params} );
+    $href->{results} = decode_json( $href->{results} );
 
-    return $result;
+    return $href;
 }
 
 sub get_test_history {
