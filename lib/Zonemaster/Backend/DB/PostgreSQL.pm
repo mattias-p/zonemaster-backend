@@ -167,19 +167,23 @@ sub test_results {
     $dbh->do( "UPDATE test_results SET progress=100, test_end_time=NOW(), results = ? WHERE hash_id=? AND progress < 100", undef, $results, $test_id )
       if ( $results );
 
-    my $href = $dbh->selectrow_hashref( "SELECT id, hash_id, creation_time at time zone current_setting('TIMEZONE') at time zone 'UTC' as creation_time, params, results FROM test_results WHERE hash_id=?", undef, $test_id );
+    my $href = $dbh->selectrow_hashref( "
+        SELECT id, hash_id, creation_time at time zone current_setting('TIMEZONE') at time zone 'UTC' as creation_time, params, results FROM test_results WHERE hash_id=?", undef, $test_id );
 
-    # This workaround is needed to properly handle all versions of perl and the DBD::Pg module
-    # More details in the zonemaster backend issue #570
-    if ( utf8::is_utf8( $href->{params} ) ) {
-        $href->{params} = encode_utf8( $result->{params} );
+    if ( defined $href->{params} ) {
+        # This workaround is needed to properly handle all versions of perl and the DBD::Pg module
+        # More details in the zonemaster backend issue #570
+        if ( utf8::is_utf8( $href->{params} ) ) {
+            $href->{params} = encode_utf8( $href->{params} );
+        }
+        $href->{params} = decode_json( $href->{params} );
     }
-    if ( utf8::is_utf8( $href->{results} ) ) {
-        $href->{results} = encode_utf8( $href->{results} );
+    if ( defined $href->{results} ) {
+        if ( utf8::is_utf8( $href->{results} ) ) {
+            $href->{results} = encode_utf8( $href->{results} );
+        }
+        $href->{results} = decode_json( $href->{results} );
     }
-
-    $href->{params}  = decode_json( $href->{params} );
-    $href->{results} = decode_json( $href->{results} );
 
     return $href;
 }

@@ -196,8 +196,12 @@ sub test_results {
     }
 
     my $href = $self->dbh->selectrow_hashref( "SELECT id, hash_id, CONVERT_TZ(`creation_time`, \@\@session.time_zone, '+00:00') AS creation_time, params, results FROM test_results WHERE hash_id=?", undef, $test_id );
-    $href->{params}  = decode_json( $href->{params} );
-    $href->{results} = decode_json( $href->{results} );
+    if ( defined $href->{params} ) {
+        $href->{params}  = decode_json( $href->{params} );
+    }
+    if ( defined $href->{results} ) {
+        $href->{results} = decode_json( $href->{results} );
+    }
 
     return $href;
 }

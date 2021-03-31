@@ -266,8 +266,12 @@ sub test_results {
     }
 
     my $href = $self->dbh->selectrow_hashref( "SELECT id, hash_id, datetime(creation_time,'localtime') AS creation_time, params, results FROM test_results WHERE hash_id=?", undef, $test_id );
-    $href->{params}  = decode_json( $href->{params} );
-    $href->{results} = decode_json( $href->{results} );
+    if ( defined $href->{params} ) {
+        $href->{params}  = decode_json( $href->{params} );
+    }
+    if ( defined $href->{results} ) {
+        $href->{results} = decode_json( $href->{results} );
+    }
 
     return $href;
 }
