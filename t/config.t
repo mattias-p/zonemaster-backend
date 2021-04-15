@@ -4,6 +4,7 @@ use utf8;
 
 use Test::More tests => 2;
 use Test::NoWarnings;
+use Test::Differences;
 use Test::Exception;
 use Log::Any::Test;    # Must come before use Log::Any
 
@@ -39,6 +40,14 @@ subtest 'Everything but NoWarnings' => sub {
             [SQLITE]
             database_file = /var/db/zonemaster.sqlite
 
+            [PUBLIC PROFILES]
+            default = /path/to/default.profile
+            two     = /path/to/two.profile
+
+            [PRIVATE PROFILES]
+            three = /path/to/three.profile
+            four  = /path/to/four.profile
+
             [ZONEMASTER]
             max_zonemaster_execution_time            = 1200
             number_of_processes_for_frontend_testing = 30
@@ -49,25 +58,35 @@ subtest 'Everything but NoWarnings' => sub {
         };
         my $config = Zonemaster::Backend::Config->parse( $text );
         isa_ok $config, 'Zonemaster::Backend::Config', 'parse() return value';
-        is $config->DB_engine,                                           'SQLite',                    'set: DB.engine';
-        is $config->DB_polling_interval,                                 1.5,                         'set: DB.polling_interval';
-        is $config->MYSQL_host,                                          'mysql-host',                'set: MYSQL.host';
-        is $config->MYSQL_port,                                          3456,                        'set: MYSQL.port';
-        is $config->MYSQL_user,                                          'mysql_user',                'set: MYSQL.user';
-        is $config->MYSQL_password,                                      'mysql_password',            'set: MYSQL.password';
-        is $config->MYSQL_database,                                      'mysql_database',            'set: MYSQL.database';
-        is $config->POSTGRESQL_host,                                     'postgresql-host',           'set: POSTGRESQL.host';
-        is $config->POSTGRESQL_port,                                     6543,                        'set: POSTGRESQL.port';
-        is $config->POSTGRESQL_user,                                     'postgresql_user',           'set: POSTGRESQL.user';
-        is $config->POSTGRESQL_password,                                 'postgresql_password',       'set: POSTGRESQL.password';
-        is $config->POSTGRESQL_database,                                 'postgresql_database',       'set: POSTGRESQL.database';
-        is $config->SQLITE_database_file,                                '/var/db/zonemaster.sqlite', 'set: SQLITE.database_file';
-        is $config->ZONEMASTER_max_zonemaster_execution_time,            1200,                        'set: ZONEMASTER.max_zonemaster_execution_time';
-        is $config->ZONEMASTER_maximal_number_of_retries,                2,                           'set: ZONEMASTER.maximal_number_of_retries';
-        is $config->ZONEMASTER_number_of_processes_for_frontend_testing, 30,                          'set: ZONEMASTER.number_of_processes_for_frontend_testing';
-        is $config->ZONEMASTER_number_of_processes_for_batch_testing,    40,                          'set: ZONEMASTER.number_of_processes_for_batch_testing';
-        is $config->ZONEMASTER_lock_on_queue,                            1,                           'set: ZONEMASTER.lock_on_queue';
-        is $config->ZONEMASTER_age_reuse_previous_test,                  800,                         'set: ZONEMASTER.age_reuse_previous_test';
+        is $config->DB_engine,            'SQLite',                    'set: DB.engine';
+        is $config->DB_polling_interval,  1.5,                         'set: DB.polling_interval';
+        is $config->MYSQL_host,           'mysql-host',                'set: MYSQL.host';
+        is $config->MYSQL_port,           3456,                        'set: MYSQL.port';
+        is $config->MYSQL_user,           'mysql_user',                'set: MYSQL.user';
+        is $config->MYSQL_password,       'mysql_password',            'set: MYSQL.password';
+        is $config->MYSQL_database,       'mysql_database',            'set: MYSQL.database';
+        is $config->POSTGRESQL_host,      'postgresql-host',           'set: POSTGRESQL.host';
+        is $config->POSTGRESQL_port,      6543,                        'set: POSTGRESQL.port';
+        is $config->POSTGRESQL_user,      'postgresql_user',           'set: POSTGRESQL.user';
+        is $config->POSTGRESQL_password,  'postgresql_password',       'set: POSTGRESQL.password';
+        is $config->POSTGRESQL_database,  'postgresql_database',       'set: POSTGRESQL.database';
+        is $config->SQLITE_database_file, '/var/db/zonemaster.sqlite', 'set: SQLITE.database_file';
+        eq_or_diff { $config->PUBLIC_PROFILES }, {    #
+            default => '/path/to/default.profile',
+            two     => '/path/to/two.profile'
+          },
+          'set: PUBLIC PROFILES';
+        eq_or_diff { $config->PRIVATE_PROFILES }, {    #
+            three => '/path/to/three.profile',
+            four  => '/path/to/four.profile'
+          },
+          'set: PRIVATE PROFILES';
+        is $config->ZONEMASTER_max_zonemaster_execution_time,            1200, 'set: ZONEMASTER.max_zonemaster_execution_time';
+        is $config->ZONEMASTER_maximal_number_of_retries,                2,    'set: ZONEMASTER.maximal_number_of_retries';
+        is $config->ZONEMASTER_number_of_processes_for_frontend_testing, 30,   'set: ZONEMASTER.number_of_processes_for_frontend_testing';
+        is $config->ZONEMASTER_number_of_processes_for_batch_testing,    40,   'set: ZONEMASTER.number_of_processes_for_batch_testing';
+        is $config->ZONEMASTER_lock_on_queue,                            1,    'set: ZONEMASTER.lock_on_queue';
+        is $config->ZONEMASTER_age_reuse_previous_test,                  800,  'set: ZONEMASTER.age_reuse_previous_test';
     };
 
     lives_and {
@@ -80,6 +99,8 @@ subtest 'Everything but NoWarnings' => sub {
         };
         my $config = Zonemaster::Backend::Config->parse( $text );
         cmp_ok abs( $config->DB_polling_interval - 0.5 ), '<', 0.000001, 'default: DB.polling_interval';
+        eq_or_diff { $config->PUBLIC_PROFILES }, { default => undef }, 'default: PUBLIC_PROFILES';
+        eq_or_diff { $config->PRIVATE_PROFILES }, {}, 'default: PRIVATE_PROFILES';
         is $config->ZONEMASTER_max_zonemaster_execution_time,            600,  'default: ZONEMASTER.max_zonemaster_execution_time';
         is $config->ZONEMASTER_maximal_number_of_retries,                0,    'default: ZONEMASTER.maximal_number_of_retries';
         is $config->ZONEMASTER_number_of_processes_for_frontend_testing, 20,   'default: ZONEMASTER.number_of_processes_for_frontend_testing';
@@ -695,6 +716,118 @@ subtest 'Everything but NoWarnings' => sub {
         Zonemaster::Backend::Config->parse( $text );
     }
     qr/LANGUAGE\.locale.*en_US/, 'die: Repeated locale_tag in LANGUAGE.locale';
+
+    lives_and {
+        my $text = q{
+            [DB]
+            engine = SQLite
+
+            [SQLITE]
+            database_file = /var/db/zonemaster.sqlite
+
+            [PUBLIC PROFILES]
+            DEFAULT = /path/to/my.profile
+
+            [PRIVATE PROFILES]
+            SECRET = /path/to/my.profile
+        };
+        my $config = Zonemaster::Backend::Config->parse( $text );
+        eq_or_diff { $config->PUBLIC_PROFILES },  { default => '/path/to/my.profile' }, 'normalize profile names under PUBLIC PROFILES';
+        eq_or_diff { $config->PRIVATE_PROFILES }, { secret  => '/path/to/my.profile' }, 'normalize profile names under PRIVATE PROFILES';
+    };
+
+    throws_ok {
+        my $text = q{
+            [DB]
+            engine = SQLite
+
+            [SQLITE]
+            database_file = /var/db/zonemaster.sqlite
+
+            [PUBLIC PROFILES]
+            -invalid-name- = /path/to/my.profile
+        };
+        Zonemaster::Backend::Config->parse( $text );
+    }
+    qr/PUBLIC PROFILES.*-invalid-name-/, 'die: Invalid profile name in PUBLIC PROFILES';
+
+    throws_ok {
+        my $text = q{
+            [DB]
+            engine = SQLite
+
+            [SQLITE]
+            database_file = /var/db/zonemaster.sqlite
+
+            [PRIVATE PROFILES]
+            -invalid-name- = /path/to/my.profile
+        };
+        Zonemaster::Backend::Config->parse( $text );
+    }
+    qr/PRIVATE PROFILES.*-invalid-name-/, 'die: Invalid profile name in PRIVATE PROFILES';
+
+    throws_ok {
+        my $text = q{
+            [DB]
+            engine = SQLite
+
+            [SQLITE]
+            database_file = /var/db/zonemaster.sqlite
+
+            [PUBLIC PROFILES]
+            valid-name = relative/path/to/my.profile
+        };
+        Zonemaster::Backend::Config->parse( $text );
+    }
+    qr/absolute.*valid-name/, 'die: Invalid absolute path in PUBLIC PROFILES';
+
+    throws_ok {
+        my $text = q{
+            [DB]
+            engine = SQLite
+
+            [SQLITE]
+            database_file = /var/db/zonemaster.sqlite
+
+            [PRIVATE PROFILES]
+            valid-name = relative/path/to/my.profile
+        };
+        Zonemaster::Backend::Config->parse( $text );
+    }
+    qr/absolute.*valid-name/, 'die: Invalid absolute path in PRIVATE PROFILES';
+
+    throws_ok {
+        my $text = q{
+            [DB]
+            engine = SQLite
+
+            [SQLITE]
+            database_file = /var/db/zonemaster.sqlite
+
+            [PUBLIC PROFILES]
+            pub-and-priv = /path/to/my.profile
+
+            [PRIVATE PROFILES]
+            pub-and-priv = /path/to/my.profile
+        };
+        Zonemaster::Backend::Config->parse( $text );
+    }
+    qr/unique.*pub-and-priv/, 'die: Repeated profile name across sections';
+
+    throws_ok {
+        my $text = q{
+            [DB]
+            engine = SQLite
+
+            [SQLITE]
+            database_file = /var/db/zonemaster.sqlite
+
+            [PRIVATE PROFILES]
+            default = /path/to/my.profile
+        };
+        Zonemaster::Backend::Config->parse( $text );
+    }
+    qr/PRIVATE PROFILES.*default/, 'die: Default profile in PRIVATE PROFILES';
 
     {
         my $path = catfile( dirname( $0 ), '..', 'share', 'backend_config.ini' );
