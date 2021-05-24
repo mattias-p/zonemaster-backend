@@ -91,8 +91,18 @@ sub test_progress {
 
     my $dbh = $self->dbh;
     if ( $progress ) {
-        if ($progress == 1) {
-            $dbh->do( "UPDATE test_results SET progress=?, test_start_time=NOW() WHERE hash_id=? AND progress <> 100", undef, $progress, $test_id );
+        if ( $progress == 1 ) {
+            $dbh->do( "
+                UPDATE test_results
+                SET progress = ?,
+                    test_start_time = NOW()
+                WHERE hash_id = ?
+                  AND progress <> 100
+                ",
+                undef,
+                $progress,
+                $test_id,
+            );
         }
         else {
             $dbh->do( "UPDATE test_results SET progress=? WHERE hash_id=? AND progress <> 100", undef, $progress, $test_id );
@@ -123,8 +133,15 @@ sub create_new_batch_job {
 
     die "You can't create a new batch job, job:[$batch_id] started on:[$creation_time] still running \n" if ( $batch_id );
 
-    my ( $new_batch_id ) =
-      $dbh->selectrow_array( "INSERT INTO batch_jobs (username) VALUES (?) RETURNING id", undef, $username );
+    my ( $new_batch_id ) = $dbh->selectrow_array( "
+          INSERT INTO batch_jobs (
+            username
+          ) VALUES (?)
+          RETURNING id
+          ",
+        undef,
+        $username,
+    );
 
     return $new_batch_id;
 }
@@ -150,7 +167,7 @@ sub create_new_test {
             WHERE params_deterministic_hash = ?
               AND creation_time > NOW() - ?::interval
         )" );
-    my $nb_inserted = $sth->execute(    #
+    $sth->execute(    #
         $batch_id,
         $priority,
         $queue,
@@ -183,9 +200,20 @@ sub test_results {
     my ( $self, $test_id, $results ) = @_;
 
     my $dbh = $self->dbh;
-    $dbh->do( "UPDATE test_results SET progress=100, test_end_time=NOW(), results = ? WHERE hash_id=? AND progress < 100",
-        undef, $results, $test_id )
-      if ( $results );
+    if ( $results ) {
+        $dbh->do( "
+            UPDATE test_results
+            SET progress = 100,
+                test_end_time = NOW(),
+                results = ?
+            WHERE hash_id = ?
+              AND progress < 100
+            ",
+            undef,
+            $results,
+            $test_id,
+        );
+    }
 
     my $result;
     eval {

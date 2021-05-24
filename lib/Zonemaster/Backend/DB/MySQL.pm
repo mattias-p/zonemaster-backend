@@ -113,7 +113,14 @@ sub create_new_batch_job {
 
     die "You can't create a new batch job, job:[$batch_id] started on:[$creaton_time] still running \n" if ( $batch_id );
 
-    $self->dbh->do( "INSERT INTO batch_jobs (username) VALUES(?)", undef, $username );
+    $self->dbh->do( "
+        INSERT INTO batch_jobs (
+            username
+        ) VALUES (?)
+        ",
+        undef,
+        $username,
+    );
     my ( $new_batch_id ) = $self->dbh->{mysql_insertid};
 
     return $new_batch_id;
@@ -137,9 +144,14 @@ sub create_new_test {
         $dbh->do( q[LOCK TABLES test_results WRITE] );
         my ( $recent_hash_id ) = $dbh->selectrow_array(
             q[
-            SELECT hash_id FROM test_results WHERE params_deterministic_hash = ? AND (TO_SECONDS(NOW()) - TO_SECONDS(creation_time)) < ?
+            SELECT hash_id
+            FROM test_results
+            WHERE params_deterministic_hash = ?
+              AND (TO_SECONDS(NOW()) - TO_SECONDS(creation_time)) < ?
             ],
-            undef, $test_params_deterministic_hash, $seconds_between_tests_with_same_params,
+            undef,
+            $test_params_deterministic_hash,
+            $seconds_between_tests_with_same_params,
         );
 
         if ( $recent_hash_id ) {
@@ -149,7 +161,16 @@ sub create_new_test {
         else {
             $dbh->do(
                 q[
-                INSERT INTO test_results (batch_id, priority, queue, params_deterministic_hash, params, domain, test_start_time, undelegated) VALUES (?, ?,?,?,?,?, NOW(),?)
+                INSERT INTO test_results (
+                    batch_id,
+                    priority,
+                    queue,
+                    params_deterministic_hash,
+                    params,
+                    domain,
+                    test_start_time,
+                    undelegated
+                ) VALUES (?,?,?,?,?,?,NOW(),?)
                 ],
                 undef,
                 $batch_id,
@@ -158,7 +179,7 @@ sub create_new_test {
                 $test_params_deterministic_hash,
                 $encoded_params,
                 $test_params->{domain},
-                ($test_params->{nameservers})?(1):(0),
+                $test_params->{nameservers} ? 1 : 0,
             );
             
             my ( undef, $hash_id ) = $dbh->selectrow_array(
@@ -177,11 +198,30 @@ sub test_progress {
 
     my $dbh = $self->dbh;
     if ( $progress ) {
-        if ($progress == 1) {
-            $dbh->do( "UPDATE test_results SET progress=?, test_start_time=NOW() WHERE hash_id=? AND progress <> 100", undef, $progress, $test_id );
+        if ( $progress == 1 ) {
+            $dbh->do( "
+                UPDATE test_results
+                SET progress = ?,
+                    test_start_time = NOW()
+                WHERE hash_id = ?
+                  AND progress <> 100
+                ",
+                undef,
+                $progress,
+                $test_id,
+            );
         }
         else {
-            $dbh->do( "UPDATE test_results SET progress=? WHERE hash_id=? AND progress <> 100", undef, $progress, $test_id );
+            $dbh->do( "
+                UPDATE test_results
+                SET progress = ?
+                WHERE hash_id = ?
+                  AND progress <> 100
+                ",
+                undef,
+                $progress,
+                $test_id,
+            );
         }
     }
 
@@ -209,8 +249,19 @@ sub test_results {
     my ( $self, $test_id, $new_results ) = @_;
 
     if ( $new_results ) {
-        $self->dbh->do( qq[UPDATE test_results SET progress=100, test_end_time=NOW(), results = ? WHERE hash_id=? AND progress < 100],
-            undef, $new_results, $test_id );
+        $self->dbh->do(
+            qq[
+            UPDATE test_results
+            SET progress = 100,
+                test_end_time = NOW(),
+                results = ?
+            WHERE hash_id = ?
+              AND progress < 100
+            ],
+            undef,
+            $new_results,
+            $test_id,
+        );
     }
 
     my $result;
@@ -318,13 +369,29 @@ sub add_batch_job {
         eval {$dbh->do( "DROP INDEX test_results__progress ON test_results" );};
         eval {$dbh->do( "DROP INDEX test_results__domain_undelegated ON test_results" );};
         
-        my $sth = $dbh->prepare( 'INSERT INTO test_results (domain, batch_id, priority, queue, params_deterministic_hash, params) VALUES (?, ?, ?, ?, ?, ?) ' );
+        my $sth = $dbh->prepare( '
+            INSERT INTO test_results (
+                domain,
+                batch_id,
+                priority,
+                queue,
+                params_deterministic_hash,
+                params
+            ) VALUES (?,?,?,?,?,?)'
+        );
         foreach my $domain ( @{$params->{domains}} ) {
             $test_params->{domain} = $domain;
             my $encoded_params                 = $js->encode( $test_params );
             my $test_params_deterministic_hash = md5_hex( encode_utf8( $encoded_params ) );
 
-            $sth->execute( $test_params->{domain}, $batch_id, $priority, $queue, $test_params_deterministic_hash, $encoded_params );
+            $sth->execute(    #
+                $test_params->{domain},
+                $batch_id,
+                $priority,
+                $queue,
+                $test_params_deterministic_hash,
+                $encoded_params,
+            );
         }
         $dbh->do( "CREATE INDEX test_results__hash_id ON test_results (hash_id, creation_time)" );
         $dbh->do( "CREATE INDEX test_results__params_deterministic_hash ON test_results (params_deterministic_hash)" );
@@ -380,13 +447,32 @@ sub select_unfinished_tests {
 sub process_unfinished_tests_give_up {
     my ( $self, $result, $hash_id ) = @_;
 
-    $self->dbh->do("UPDATE test_results SET progress = 100, test_end_time = NOW(), results = ? WHERE hash_id=?", undef, encode_json($result), $hash_id);
+    $self->dbh->do( "
+        UPDATE test_results
+        SET progress = 100,
+            test_end_time = NOW(),
+            results = ?
+        WHERE hash_id = ?
+        ",
+        undef,
+        encode_json( $result ),
+        $hash_id,
+    );
 }
 
 sub schedule_for_retry {
     my ( $self, $hash_id ) = @_;
 
-    $self->dbh->do("UPDATE test_results SET nb_retries = nb_retries + 1, progress = 0, test_start_time = NOW() WHERE hash_id=?", undef, $hash_id);
+    $self->dbh->do( "
+        UPDATE test_results
+        SET nb_retries = nb_retries + 1,
+            progress = 0,
+            test_start_time = NOW()
+        WHERE hash_id = ?
+        ",
+        undef,
+        $hash_id,
+    );
 }
 
 
