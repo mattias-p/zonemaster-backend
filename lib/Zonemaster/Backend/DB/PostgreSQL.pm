@@ -169,7 +169,7 @@ sub create_new_test {
         WHERE NOT EXISTS (
             SELECT * FROM test_results
             WHERE params_deterministic_hash = ?
-              AND creation_time > ?
+              AND creation_time >= ?
         )" );
     my $now = time;
     $sth->execute(    #

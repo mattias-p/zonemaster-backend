@@ -151,7 +151,7 @@ sub create_new_test {
             SELECT hash_id
             FROM test_results
             WHERE params_deterministic_hash = ?
-              AND creation_time > ?
+              AND creation_time >= ?
             ],
             undef,
             $test_params_deterministic_hash,
