@@ -233,6 +233,8 @@ sudo systemctl enable zm-rpcapi
 sudo systemctl enable zm-testagent
 sudo systemctl start zm-rpcapi
 sudo systemctl start zm-testagent
+sudo firewall-cmd --add-port 5000/tcp --permanent
+sudo firewall-cmd --reload
 ```
 
 
