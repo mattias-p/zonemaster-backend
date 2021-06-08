@@ -43,7 +43,6 @@ has 'password' => (
 has 'database' => (
     is       => 'ro',
     isa      => 'Str',
-    required => 1,
 );
 
 has 'dbhandle' => (
@@ -70,24 +69,28 @@ sub dbh {
         return $dbh;
     }
     else {
-        my $host     = $self->host;
-        my $port     = $self->port;
-        my $user     = $self->user;
-        my $password = $self->password;
-        my $database = $self->database;
-
-        my $data_source_name = "DBI:mysql:database=$database;host=$host;port=$port";
-
-        $log->notice( "Connecting to MySQL: database=$database host=$host user=$user" ) if $log->is_notice;
+        my $host = $self->host;
 
         if ( untaint_ipv6_address( $host ) ) {
             $host = "[$host]";
         }
 
+        my @dsn_params = (
+            "host=" . $host,
+        );
+        if ( defined $self->port ) {
+            push @dsn_params, "port=" . $self->port;
+        }
+        if ( defined $self->database ) {
+            push @dsn_params, "database=" . $self->database;
+        }
+        my $data_source_name = 'DBI:mysql:' . join( ';', @dsn_params );
+
+        $log->noticef( "Connecting to database: %s", $data_source_name );
         $dbh = DBI->connect(
             $data_source_name,
-            $user,
-            $password,
+            $self->user,
+            $self->password,
             {
                 RaiseError => 1,
                 AutoCommit => 1

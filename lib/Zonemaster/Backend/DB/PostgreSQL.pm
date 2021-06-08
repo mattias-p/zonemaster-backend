@@ -18,7 +18,6 @@ with 'Zonemaster::Backend::DB';
 has 'host' => (
     is       => 'ro',
     isa      => 'Str',
-    required => 1,
 );
 
 has 'port' => (
@@ -42,7 +41,6 @@ has 'password' => (
 has 'database' => (
     is       => 'ro',
     isa      => 'Str',
-    required => 1,
 );
 
 has 'dbhandle' => (
@@ -71,24 +69,31 @@ sub dbh {
     else {
         my $host     = $self->host;
         my $port     = $self->port;
-        my $user     = $self->user;
-        my $password = $self->password;
         my $database = $self->database;
 
-        my $data_source_name = "DBI:Pg:database=$database;host=$host;port=$port";
+        my @dsn_params;
+        if ( defined $self->host ) {
+            push @dsn_params, "host=" . $self->host;
+        }
+        if ( defined $self->database ) {
+            push @dsn_params, "database=" . $self->database;
+        }
+        my $data_source_name = 'DBI:Pg:' . join( ';', @dsn_params );
 
-        $log->notice( "Connecting to PostgreSQL: database=$database host=$host user=$user" ) if $log->is_notice;
+        $log->noticef( "Connecting to database: %s", $data_source_name );
+        delete local $ENV{PGHOST};
+        delete local $ENV{PGDATABASE};
         $dbh = DBI->connect(
             $data_source_name,
-            $user,
-            $password,
+            $self->user,
+            $self->password,
             {
                 RaiseError => 1,
                 AutoCommit => 1
             }
         );
-
         $dbh->{AutoInactiveDestroy} = 1;
+
         $self->dbhandle( $dbh );
         return $dbh;
     }
