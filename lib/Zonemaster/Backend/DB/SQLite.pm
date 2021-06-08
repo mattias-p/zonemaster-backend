@@ -12,13 +12,11 @@ use Encode;
 use JSON::PP;
 use Log::Any qw( $log );
 
-use Zonemaster::Backend::Config;
-
 with 'Zonemaster::Backend::DB';
 
-has 'config' => (
+has 'database_file' => (
     is       => 'ro',
-    isa      => 'Zonemaster::Backend::Config',
+    isa      => 'Str',
     required => 1,
 );
 
@@ -27,11 +25,17 @@ has 'dbh' => (
     isa => 'DBI::db',
 );
 
+sub from_config {
+    my ( $class, $config ) = @_;
+
+    return $class->new( database_file => $config->SQLITE_database_file );
+}
+
 sub BUILD {
     my ( $self ) = @_;
 
     if ( !defined $self->dbh ) {
-        my $file = $self->config->SQLITE_database_file;
+        my $file = $self->database_file;
 
         $log->notice( "Opening SQLite: file=$file" ) if $log->is_notice;
         my $dbh = DBI->connect(

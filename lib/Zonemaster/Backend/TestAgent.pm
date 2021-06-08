@@ -37,7 +37,7 @@ sub new {
 
     my $backend_module = "Zonemaster::Backend::DB::" . $dbtype;
     eval "require $backend_module";
-    $self->{db} = $backend_module->new( { config => $self->{config} } );
+    $self->{db} = $backend_module->from_config( $self->{config} );
 
     $self->{profiles} = $self->{config}->ReadProfilesInfo();
     foreach my $profile (keys %{$self->{profiles}}) {

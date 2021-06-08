@@ -12,13 +12,36 @@ use JSON::PP;
 use Log::Any qw($log);
 
 use Zonemaster::Backend::DB;
-use Zonemaster::Backend::Config;
 
 with 'Zonemaster::Backend::DB';
 
-has 'config' => (
+has 'host' => (
     is       => 'ro',
-    isa      => 'Zonemaster::Backend::Config',
+    isa      => 'Str',
+    required => 1,
+);
+
+has 'port' => (
+    is       => 'ro',
+    isa      => 'Int',
+    required => 0,
+);
+
+has 'user' => (
+    is       => 'ro',
+    isa      => 'Str',
+    required => 1,
+);
+
+has 'password' => (
+    is       => 'ro',
+    isa      => 'Str',
+    required => 1,
+);
+
+has 'database' => (
+    is       => 'ro',
+    isa      => 'Str',
     required => 1,
 );
 
@@ -26,6 +49,17 @@ has 'dbhandle' => (
     is  => 'rw',
     isa => 'DBI::db',
 );
+
+sub from_config {
+    my ( $class, $config ) = @_;
+
+    return $class->new(    #
+        host     => $config->POSTGRESQL_host,
+        user     => $config->POSTGRESQL_user,
+        password => $config->POSTGRESQL_password,
+        database => $config->POSTGRESQL_database,
+    );
+}
 
 sub dbh {
     my ( $self ) = @_;
@@ -35,11 +69,11 @@ sub dbh {
         return $dbh;
     }
     else {
-        my $database = $self->config->POSTGRESQL_database;
-        my $host     = $self->config->POSTGRESQL_host;
-        my $port     = $self->config->POSTGRESQL_port;
-        my $user     = $self->config->POSTGRESQL_user;
-        my $password = $self->config->POSTGRESQL_password;
+        my $host     = $self->host;
+        my $port     = $self->port;
+        my $user     = $self->user;
+        my $password = $self->password;
+        my $database = $self->database;
 
         my $data_source_name = "DBI:Pg:database=$database;host=$host;port=$port";
 

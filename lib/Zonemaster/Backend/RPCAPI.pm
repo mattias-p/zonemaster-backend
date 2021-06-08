@@ -62,10 +62,10 @@ sub _init_db {
     my ( $self, $dbtype ) = @_;
 
     eval {
-        my $backend_module = "Zonemaster::Backend::DB::" . $dbtype;
-        eval "require $backend_module";
+        my $db_module = "Zonemaster::Backend::DB::" . $dbtype;
+        eval "require $db_module";
         die "$@ \n" if $@;
-        $self->{db} = $backend_module->new( { config => $self->{config} } );
+        $self->{db} = $db_module->from_config( $self->{config} );
     };
     if ($@) {
         handle_exception('_init_db', "Failed to initialize the [$dbtype] database backend module: [$@]", '002');

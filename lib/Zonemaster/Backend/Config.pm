@@ -684,7 +684,7 @@ sub new_DB {
     require( join( "/", split( /::/, $dbclass ) ) . ".pm" );
     $dbclass->import();
 
-    my $db = $dbclass->new({ config => $self });
+    my $db = $dbclass->from_config( $self );
 
     # Connect or die
     $db->dbh;
