@@ -58,41 +58,38 @@ sub DEMOLISH {
     $self->dbh->disconnect() if $self->dbh;
 }
 
-sub create_db {
+=head2 init_schema
+
+Defined database schema.
+
+Consists of things like tables, indices and triggers.
+
+=cut
+
+sub init_schema {
     my ( $self ) = @_;
 
-    ####################################################################
-    # TEST RESULTS
-    ####################################################################
-    $self->dbh->do( 'DROP TABLE IF EXISTS test_specs' ) or die "SQLite Fatal error: " . $self->dbh->errstr() . "\n";
-
-    $self->dbh->do( 'DROP TABLE IF EXISTS test_results' ) or die "SQLite Fatal error: " . $self->dbh->errstr() . "\n";
-
     $self->dbh->do(
-        'CREATE TABLE test_results (
-                         id integer PRIMARY KEY AUTOINCREMENT,
-                         hash_id VARCHAR(16) DEFAULT NULL,
-                         domain VARCHAR(255) NOT NULL,
-                         batch_id integer NULL,
-                         creation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                         test_start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                         test_end_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                         priority integer DEFAULT 10,
-                         queue integer DEFAULT 0,
-                         progress integer DEFAULT 0,
-                         params_deterministic_hash character varying(32),
-                         params text NOT NULL,
-                         results text DEFAULT NULL,
-                         undelegated boolean NOT NULL DEFAULT false,
-                         nb_retries integer NOT NULL DEFAULT 0
-               )
-     '
-    ) or die "SQLite Fatal error: " . $self->dbh->errstr() . "\n";
-
-    ####################################################################
-    # BATCH JOBS
-    ####################################################################
-    $self->dbh->do( 'DROP TABLE IF EXISTS batch_jobs' ) or die "SQLite Fatal error: " . $self->dbh->errstr() . "\n";
+        q{
+            CREATE TABLE test_results (
+                id integer PRIMARY KEY AUTOINCREMENT,
+                hash_id VARCHAR(16) DEFAULT NULL,
+                domain VARCHAR(255) NOT NULL,
+                batch_id integer NULL,
+                creation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                test_start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                test_end_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                priority integer DEFAULT 10,
+                queue integer DEFAULT 0,
+                progress integer DEFAULT 0,
+                params_deterministic_hash character varying(32),
+                params text NOT NULL,
+                results text DEFAULT NULL,
+                undelegated boolean NOT NULL DEFAULT false,
+                nb_retries integer NOT NULL DEFAULT 0
+            )
+        }
+    );
 
     $self->dbh->do(
         'CREATE TABLE batch_jobs (
@@ -101,12 +98,8 @@ sub create_db {
                          creation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
                )
      '
-    ) or die "SQLite Fatal error: " . $self->dbh->errstr() . "\n";
+    );
 
-    ####################################################################
-    # USERS
-    ####################################################################
-    $self->dbh->do( 'DROP TABLE IF EXISTS users' );
     $self->dbh->do(
         'CREATE TABLE users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -115,9 +108,23 @@ sub create_db {
                     user_info json DEFAULT NULL
                )
      '
-    ) or die "SQLite Fatal error: " . $self->dbh->errstr() . "\n";
+    );
+}
 
-    return 1;
+=head2 cleanup_schema
+
+Drop tables and indices.
+
+=cut
+
+sub cleanup_schema {
+    my ( $self ) = @_;
+
+    $self->dbh->do( 'DROP TABLE IF EXISTS users' );
+    $self->dbh->do( 'DROP TABLE IF EXISTS batch_jobs' );
+    $self->dbh->do( 'DROP TABLE IF EXISTS test_results' );
+
+    return;
 }
 
 sub user_exists_in_db {

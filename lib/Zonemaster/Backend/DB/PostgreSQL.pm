@@ -99,6 +99,93 @@ sub dbh {
     }
 }
 
+=head2 init_schema
+
+Defined database schema.
+
+Consists of things like tables, indices and triggers.
+
+=cut
+
+sub init_schema {
+    my ( $self, $config ) = @_;
+
+    my $user = $config->POSTGRESQL_user;
+
+    # Create tables
+    $self->dbh->do(
+        q{
+            CREATE TABLE test_results (
+                id serial primary key,
+                hash_id VARCHAR(16) DEFAULT substring(md5(random()::text || clock_timestamp()::text) from 1 for 16) NOT NULL,
+                batch_id integer,
+                creation_time timestamp without time zone DEFAULT NOW() NOT NULL,
+                test_start_time timestamp without time zone,
+                test_end_time timestamp without time zone,
+                priority integer DEFAULT 10,
+                queue integer DEFAULT 0,
+                progress integer DEFAULT 0,
+                params_deterministic_hash varchar(32),
+                params json NOT NULL,
+                results json,
+                nb_retries integer NOT NULL DEFAULT 0
+            );
+        }
+    );
+    $self->dbh->do(
+        q{
+            CREATE TABLE batch_jobs (
+                id serial PRIMARY KEY,
+                username varchar(50) NOT NULL,
+                creation_time timestamp without time zone NOT NULL DEFAULT NOW()
+            );
+        }
+    );
+    $self->dbh->do(
+        q{
+            CREATE TABLE users (
+                id serial PRIMARY KEY,
+                user_info JSON
+            );
+        }
+    );
+
+    # Create indices
+    $self->dbh->do( q{ CREATE INDEX test_results__hash_id ON test_results (hash_id); } );
+    $self->dbh->do( q{ CREATE INDEX test_results__params_deterministic_hash ON test_results (params_deterministic_hash); } );
+    $self->dbh->do( q{ CREATE INDEX test_results__batch_id_progress ON test_results (batch_id, progress); } );
+    $self->dbh->do( q{ CREATE INDEX test_results__progress ON test_results (progress); } );
+    $self->dbh->do( q{ CREATE INDEX test_results__domain_undelegated ON test_results ((params->>'domain'), (params->>'undelegated')); } );
+
+    # Grant privileges
+    $self->dbh->do( qq{ GRANT select, insert, update ON ALL TABLES IN SCHEMA public TO $user; } );
+    $self->dbh->do( qq{ GRANT usage ON ALL SEQUENCES IN SCHEMA public TO $user; } );
+
+    return;
+}
+
+=head2 cleanup_schema
+
+Drop tables and indices.
+
+=cut
+
+sub cleanup_schema {
+    my ( $self ) = @_;
+
+    $self->dbh->do( q{ DROP INDEX IF EXISTS test_results__hash_id; } );
+    $self->dbh->do( q{ DROP INDEX IF EXISTS test_results__params_deterministic_hash; } );
+    $self->dbh->do( q{ DROP INDEX IF EXISTS test_results__batch_id_progress; } );
+    $self->dbh->do( q{ DROP INDEX IF EXISTS test_results__progress; } );
+    $self->dbh->do( q{ DROP INDEX IF EXISTS test_results__domain_undelegated; } );
+
+    $self->dbh->do( q{ DROP TABLE IF EXISTS test_results; } );
+    $self->dbh->do( q{ DROP TABLE IF EXISTS batch_jobs; } );
+    $self->dbh->do( q{ DROP TABLE IF EXISTS users; } );
+
+    return;
+}
+
 sub user_exists_in_db {
     my ( $self, $user ) = @_;
 
