@@ -12,10 +12,14 @@ use Data::Dumper;
 requires qw(
   add_api_user_to_db
   add_batch_job
+  cleanup_db
+  cleanup_schema
   create_new_batch_job
   create_new_test
   get_test_history
   get_test_params
+  init_db
+  init_schema
   process_unfinished_tests_give_up
   select_unfinished_tests
   test_progress

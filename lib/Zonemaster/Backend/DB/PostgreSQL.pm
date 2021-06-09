@@ -99,6 +99,43 @@ sub dbh {
     }
 }
 
+=head2 init_db
+
+Create database and user.
+
+=cut
+
+sub init_db {
+    my ( $self, $config ) = @_;
+
+    my $user     = $config->POSTGRESQL_user;
+    my $password = $config->POSTGRESQL_password;
+    my $database = $config->POSTGRESQL_database;
+
+    $self->dbh->do( qq{ CREATE DATABASE $database WITH ENCODING 'UTF8'; } );
+    $self->dbh->do( qq{ CREATE USER $user WITH PASSWORD '$password'; } );
+
+    return;
+}
+
+=head2 cleanup_db
+
+Drop database and user.
+
+=cut
+
+sub cleanup_db {
+    my ( $self, $config ) = @_;
+
+    my $user     = $config->POSTGRESQL_user;
+    my $database = $config->POSTGRESQL_database;
+
+    $self->dbh->do( qq{ DROP DATABASE IF EXISTS $database; } );
+    $self->dbh->do( qq{ DROP USER IF EXISTS $user; } );
+
+    return;
+}
+
 =head2 init_schema
 
 Defined database schema.

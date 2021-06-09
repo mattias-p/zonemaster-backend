@@ -58,6 +58,26 @@ sub DEMOLISH {
     $self->dbh->disconnect() if $self->dbh;
 }
 
+=head2 init_db
+
+Create database and user.
+
+=cut
+
+sub init_db {
+    return;
+}
+
+=head2 cleanup_db
+
+Drop database and user.
+
+=cut
+
+sub cleanup_db {
+    return;
+}
+
 =head2 init_schema
 
 Defined database schema.

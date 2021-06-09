@@ -103,6 +103,46 @@ sub dbh {
     }
 }
 
+=head2 init_db
+
+Create database and user.
+
+=cut
+
+sub init_db {
+    my ( $self, $config ) = @_;
+
+    my $user     = $config->MYSQL_user;
+    my $password = $config->MYSQL_password;
+    my $database = $config->MYSQL_database;
+
+    $self->dbh->do( qq{ CREATE DATABASE $database; } );
+    $self->dbh->do( qq{ CREATE USER '$user'\@'localhost' IDENTIFIED BY '$password'; } );
+    $self->dbh->do( qq{ CREATE USER '$user'\@'%' IDENTIFIED BY '$password'; } );
+    $self->dbh->do( qq{ GRANT select, update, insert, lock tables ON $database.* TO '$user'; } );
+
+    return;
+}
+
+=head2 cleanup_db
+
+Drop database and user.
+
+=cut
+
+sub cleanup_db {
+    my ( $self, $config ) = @_;
+
+    my $user     = $config->MYSQL_user;
+    my $database = $config->MYSQL_database;
+
+    $self->dbh->do( qq{ DROP DATABASE IF EXISTS $database; } );
+    $self->dbh->do( qq{ DROP USER IF EXISTS '$user'\@'localhost'; } );
+    $self->dbh->do( qq{ DROP USER IF EXISTS '$user'\@'%'; } );
+
+    return;
+}
+
 =head2 init_schema
 
 Defined database schema.
