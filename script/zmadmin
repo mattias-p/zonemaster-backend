@@ -1,0 +1,135 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use feature 'say';
+
+use Getopt::Long qw( GetOptionsFromArray :config require_order );
+use JSON::PP;
+use LWP::UserAgent;
+use Pod::Usage;
+use Zonemaster::Backend::Config;
+
+=head1 NAME
+
+B<zmb> - Utility for Zonemaster::Backend admin tasks
+
+=head1 SYNOPSIS
+
+zmadmin [GLOBAL OPTIONS] COMMAND [OPTIONS]
+
+This interface is unstable and will change in a future release.
+
+=head1 GLOBAL OPTIONS
+
+ --help         Show usage
+ --verbose      Show RPC query
+
+=cut
+
+sub main {
+    my @argv = @_;
+
+    my $opt_help;
+    my $opt_verbose;
+    GetOptionsFromArray(
+        \@argv,
+        'help'     => \$opt_help,
+        'verbose'  => \$opt_verbose,
+    ) or pod2usage( 2 );
+    if ( !@argv ) {
+        pod2usage( -verbose => 99, -sections => ['SYNOPSIS', 'GLOBAL OPTIONS'], -exitval => 'NOEXIT' );
+        show_commands();
+        exit 1;
+    }
+    my $cmd = shift @argv;
+    pod2usage( 1 ) if !defined $cmd;
+    my $cmd_sub = \&{ "cmd_" . $cmd };
+    pod2usage( "'$cmd' is not a command" ) if !defined &$cmd_sub;
+    pod2usage( -verbose => 99, -sections => ["COMMANDS/$cmd"] ) if $opt_help;
+
+    my $output = &$cmd_sub( @argv );
+
+    say $output;
+
+    return;
+}
+
+
+=head1 COMMANDS
+
+=head2 man
+
+Show the full manual page.
+
+ zmb [GLOBAL OPTIONS] man
+
+=cut
+
+sub cmd_man {
+    pod2usage( -verbose => 2 );
+}
+
+
+=head2 initdb
+
+Initialize database.
+
+ zmb [GLOBAL OPTIONS] initdb
+
+=cut
+
+sub cmd_initdb {
+    my $config = Zonemaster::Backend::Config->load_config();
+    my $db = $config->new_DB;
+    $db->init_db( $config );
+    $db->init_schema( $config );
+    return;
+}
+
+=head2 cleanupdb
+
+Clean up database.
+
+ zmb [GLOBAL OPTIONS] cleanupdb
+
+=cut
+
+sub cmd_cleanupdb {
+    my $config = Zonemaster::Backend::Config->load_config();
+    my $db = $config->new_DB;
+    $db->cleanup_db( $config );
+    $db->cleanup_schema( $config );
+    return;
+}
+
+sub show_commands {
+    my %specials = (
+        man                 => 'Show the full manual page.',
+        non_existing_method => 'Call a non-existing RPC method.',
+    );
+    my @commands  = get_commands();
+    my $max_width = 0;
+    for my $command ( @commands ) {
+        $max_width = length $command if length $command > $max_width;
+    }
+    say "Commands:";
+    for my $command ( @commands ) {
+        if ( exists $specials{$command} ) {
+            printf "     %-*s     %s\n", $max_width, $command, $specials{$command};
+        }
+        else {
+            say "     ", $command;
+        }
+    }
+}
+
+
+sub get_commands {
+    no strict 'refs';
+
+    return sort
+      map { $_ =~ s/^cmd_//r }
+      grep { $_ =~ /^cmd_/ } grep { defined &{"main\::$_"} } keys %{"main\::"};
+}
+
+main( @ARGV );
