@@ -141,7 +141,7 @@ sudo systemctl start mariadb
 Initialize the database (unless you keep an old database):
 
 ```sh
-sudo mysql < $(perl -MFile::ShareDir=dist_dir -E 'say dist_dir("Zonemaster-Backend")')/initial-mysql.sql
+sudo zmadmin initdb
 ```
 
 > **Note:** This creates a database called `zonemaster`, as well as a user
@@ -186,7 +186,7 @@ Install, configure and start database engine:
 Initialize Zonemaster database (unless you keep an old database):
 
 ```sh
-sudo -u postgres psql -f $(perl -MFile::ShareDir=dist_dir -E 'say dist_dir("Zonemaster-Backend")')/initial-postgres.sql
+sudo zmadmin initdb
 ```
 
 > **Note:** This creates a database called `zonemaster`, as well as a user called
@@ -345,7 +345,7 @@ sudo sed -i '/\bengine\b/ s/=.*/= MySQL/' /etc/zonemaster/backend_config.ini
 Initialize Zonemaster database (unless you keep an old database):
 
 ```sh
-sudo mysql < $(perl -MFile::ShareDir=dist_dir -E 'say dist_dir("Zonemaster-Backend")')/initial-mysql.sql
+sudo zmadmin initdb
 ```
 
 > **Note:** This creates a database called `zonemaster`, as well as a user
@@ -372,7 +372,7 @@ sudo sed -i '/\bengine\b/ s/=.*/= PostgreSQL/' /etc/zonemaster/backend_config.in
 Initialize Zonemaster database (unless you keep an old database):
 
 ```sh
-sudo -u postgres psql -f $(perl -MFile::ShareDir=dist_dir -E 'say dist_dir("Zonemaster-Backend")')/initial-postgres.sql
+sudo zmadmin initdb
 ```
 
 > **Note:** This creates a database called `zonemaster`, as well as a user called
@@ -397,10 +397,7 @@ sudo sed -i '/\bengine\b/ s/=.*/= SQLite/' /etc/zonemaster/backend_config.ini
 Create database directory, set correct ownership and create database:
 
 ```sh
-cd `perl -MFile::ShareDir=dist_dir -E 'say dist_dir("Zonemaster-Backend")'`
-sudo install -v -m 755 -o zonemaster -g zonemaster -d /var/lib/zonemaster
-sudo perl create_db_sqlite.pl
-sudo chown zonemaster:zonemaster /var/lib/zonemaster/db.sqlite
+sudo zmadmin initdb
 ```
 
 > SQLite will not run as a daemon and does not need to be started.
@@ -542,8 +539,7 @@ Unless you keep an old database, initialize the database (and give the
 root password when prompted):
 
 ```sh
-cd `perl -MFile::ShareDir -le 'print File::ShareDir::dist_dir("Zonemaster-Backend")'`
-mysql -u root -p < ./initial-mysql.sql
+sudo zmadmin initdb
 ```
 
 > **Note:** This creates a database called `zonemaster`, as well as a user
@@ -571,8 +567,7 @@ service postgresql start
 Initialize Zonemaster database (unless you keep an old database):
 
 ```sh
-cd `perl -MFile::ShareDir -le 'print File::ShareDir::dist_dir("Zonemaster-Backend")'`
-psql -U postgres -f ./initial-postgres.sql
+sudo zmadmin initdb
 ```
 
 #### 5.2.3 Instructions for SQLite (FreeBSD)
