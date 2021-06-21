@@ -39,12 +39,12 @@ sub new {
     eval "require $db_module";
     $self->{_db} = $db_module->new( { config => $config } );
 
-    my %all_profiles = %{ $config->ReadProfilesInfo() };
+    my %all_profiles = ( $config->PUBLIC_PROFILES, $config->PRIVATE_PROFILES );
     foreach my $name ( keys %all_profiles ) {
-        my $path = $all_profiles{$name}{profile_file_name};
+        my $path = $all_profiles{$name};
 
         my $profile = Zonemaster::Engine::Profile->default;
-        if ( $path ne "" ) {
+        if ( defined $path ) {
             my $json = eval { read_file( $path, err_mode => 'croak' ) }    #
               // die "Error loading profile '$name': $@";
             my $named_profile = eval { Zonemaster::Engine::Profile->from_json( $json ) }    #

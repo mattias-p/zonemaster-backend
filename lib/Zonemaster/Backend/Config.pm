@@ -683,29 +683,6 @@ sub _add_private_profile {
     return;
 }
 
-sub ReadProfilesInfo {
-    my ($self) = @_;
-
-    my $profiles;
-    foreach my $public_profile ( keys %{ $self->{_public_profiles} } ) {
-        $profiles->{$public_profile}->{type} = 'public';
-        $profiles->{$public_profile}->{profile_file_name} = $self->{_public_profiles}{$public_profile} // "";
-    }
-
-    foreach my $private_profile ( keys %{ $self->{_private_profiles} } ) {
-        $profiles->{$private_profile}->{type} = 'private';
-        $profiles->{$private_profile}->{profile_file_name} = $self->{_private_profiles}{$private_profile};
-    }
-
-    return $profiles;
-}
-
-sub ListPublicProfiles {
-    my ($self) = @_;
-
-    return keys %{ $self->{_public_profiles} };
-}
-
 =head2 new_DB
 
 Create a new database adapter object according to configuration.
