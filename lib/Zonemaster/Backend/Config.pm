@@ -5,7 +5,7 @@ use 5.14.2;
 
 our $VERSION = '1.1.0';
 
-use Carp qw( confess );
+use Carp qw( confess croak );
 use Config::IniFiles;
 use Config;
 use File::ShareDir qw[dist_file];
@@ -15,27 +15,56 @@ use Readonly;
 use Zonemaster::Backend::Validator qw( :untaint );
 use Zonemaster::Backend::DB;
 
-our $path;
+Readonly my @SIG_NAME => split ' ', $Config{sig_name};
 
-if ($ENV{ZONEMASTER_BACKEND_CONFIG_FILE}) {
-    $path = $ENV{ZONEMASTER_BACKEND_CONFIG_FILE};
-}
-else {
-    my @search_paths = (
-        '/etc/zonemaster/backend_config.ini',
-        '/usr/local/etc/zonemaster/backend_config.ini',
-        dist_file('Zonemaster-Backend', "backend_config.ini")
-    );
+=head1 STATIC METHODS
 
-    for my $default_path (@search_paths) {
-        if ( -e $default_path ) {
-            $path = $default_path;
-            last;
+=head2 get_default_path
+
+If the environment variable ZONEMASTER_BACKEND_CONFIG_FILE is set, its value is
+simply returned.
+
+Then the usual places are checked in the following order.
+The first file found is returned.
+
+The places are:
+
+=over 4
+
+=item /etc/zonemaster/backend_config.ini
+
+=item /usr/local/etc/zonemaster/backend_config.ini
+
+=item DIST_DIR/backend_config.ini
+
+Where DIST_DIR is wherever File::ShareDir installs the Zonemaster-Backend dist.
+
+=back
+
+If all places are checked and no file is found, an exception is thrown.
+
+=cut
+
+sub get_default_path {
+    if ( $ENV{ZONEMASTER_BACKEND_CONFIG_FILE} ) {
+        return $ENV{ZONEMASTER_BACKEND_CONFIG_FILE};
+    }
+    else {
+        my @search_paths = (    #
+            '/etc/zonemaster/backend_config.ini',
+            '/usr/local/etc/zonemaster/backend_config.ini',
+            eval { dist_file( 'Zonemaster-Backend', "backend_config.ini" ) },
+        );
+
+        for my $default_path ( @search_paths ) {
+            if ( -e $default_path ) {
+                return $default_path;
+            }
         }
+
+        croak "File not found: backend_config.ini\n";
     }
 }
-
-Readonly my @SIG_NAME => split ' ', $Config{sig_name};
 
 =head1 CONSTRUCTORS
 
@@ -51,6 +80,8 @@ See L<parse> for details on additional parsing-related error modes.
 
 sub load_config {
     my ( $class ) = @_;
+
+    state $path = get_default_path();
 
     $log->notice( "Loading config: $path" );
     my $text = read_file $path;
