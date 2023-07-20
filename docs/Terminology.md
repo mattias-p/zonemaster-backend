@@ -78,14 +78,29 @@ UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="3")
 
 # Components
 
-* **Clerk**, component. A server that responds to [questions][question] and [job requests][job request] from users.
-* **Dispatcher**, component. A broker that [claims][claim] [WAITING] [jobs][job] and delegates their processing to [workers][worker].
-* **Worker**, component. A thread that performs [jobs][job].
+**Clerk**
+* A server that responds to [questions][question] and [job requests][job request] from users.
+
+**Dispatcher**
+* A broker that [claims][claim] [WAITING] [jobs][job] and delegates their processing to [workers][worker].
+
+**Worker**
+* A thread that performs [jobs][job].
 
 # Business objects
-* **Job**, persistent business object. The principal unit of work in Zonemaster Backend. It has a [life cycle][job life cycle].
-* **Job request**, transient business object. A [clerk] receives *job requests* from users and responds to them synchronously.
-* **Question**, transient business object. A [clerk] receives *questions* from users and responds to them synchronously.
+
+**Job**
+* A persistent business object.
+  The principal unit of work in Zonemaster Backend.
+  Governed by the [job life cycle].
+
+**Job request**
+* A transient business object.
+  A [clerk] receives *job requests* from users and responds to them synchronously.
+
+**Question**
+* A transient business object.
+  A [clerk] receives *questions* from users and responds to them synchronously.
 
 # Life cycles
 ## Job life cycle
@@ -99,30 +114,42 @@ PROCESSING --> COMPLETED: complete
 PROCESSING --> CRASHED: crash
 PROCESSING --> LAPSED: lapse
 ```
-* **WAITING**, job state. The *job* is waiting to be processed.
-* **PROCESSING**, job state. This means that a Zonemaster Engine test is being performed.
-* **COMPLETED**, job end state.
-  The *job* has been processed.
+**WAITING** job state
+* The *job* is waiting to be processed.
+
+**PROCESSING** job state
+* The *job* is being processed.
+  This means that a Zonemaster Engine test is being performed.
+
+**COMPLETED** job end state
+* The *job* has been processed.
   The Zonemaster Engine test terminated normally.
   A report is available with the full test results.
-* **CRASHED**, job end state.
-  The *job* has been processed.
+
+**CRASHED** job end state
+* The *job* has been processed.
   A critical error occurred while processing.
   A report is available with the partial test results.
-* **LAPSED**, job end state.
-  The *job* has been processed.
+
+**LAPSED** job end state
+* The *job* has been processed.
   The processing was cancelled because it took too long. 
   A report is available with the partial test results.
-* **create**, job transition.
-  Triggered by a [clerk] when it receives a [job request] from a user and no matching *job* is available for reuse.
-* **claim**, job transition.
-  Triggered by a [dispatcher] when it notices that there is a [worker] available to process this *job*.
-* **complete**, job transition.
-  Triggered by a [worker] when the Zonemaster Engine test returns normally.
-* **crash**, job transition.
-  Triggered by a [worker] when a critical error occurs in the [PROCESSING] state.
-* **lapse**, job transition.
-  Triggered by a [dispatcher] when a *job* has been in the [PROCESSING] state too long.
+
+**create** job transition
+* Triggered by a [clerk] when it receives a [job request] from a user and no matching *job* is available for reuse.
+
+**claim** job transition
+* Triggered by a [dispatcher] when it notices that there is a [worker] available to process this *job*.
+
+**complete** job transition
+* Triggered by a [worker] when the Zonemaster Engine test returns normally.
+
+**crash** job transition
+* Triggered by a [worker] when a critical error occurs in the [PROCESSING] state.
+
+**lapse** job transition
+* Triggered by a [dispatcher] when a *job* has been in the [PROCESSING] state for too long.
 
 [claim]: #job-life-cycle
 [clerk]: #components
@@ -130,6 +157,7 @@ PROCESSING --> LAPSED: lapse
 [job]: #business-objects
 [job life cycle]: #job-life-cycle
 [job request]: #business-objects
+[processing]: #job-life-cycle
 [question]: #business-objects
 [waiting]: #job-life-cycle
 [worker]: #components
