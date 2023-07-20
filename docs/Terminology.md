@@ -100,7 +100,10 @@ UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="3")
 * A data store for persistent business objects.
 
 **Dispatcher**
-* A broker that notices and [claims][claim] [WAITING] [jobs][job] and delegates their processing to [workers][worker].
+* A broker that monitors and schedules the performing of [jobs].
+
+  A *dispatcher* notices [jobs][job] in the [WAITING] state, [claims][claim] them and delegates their processing to [workers][worker].
+  It also [expires][expire] [jobs][job] that have been in the [PROCESSING] state for too long.
 
 **Worker**
 * A thread that performs [jobs][job].
@@ -111,7 +114,7 @@ UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="3")
 A class of business objects persisted in the [database].
 The principal unit of work in Zonemaster Backend.
 
-Processing a *job* means executing a Zonemaster Engine test.
+Processing a *job* means executing a Zonemaster Engine test and performing associated bookkeeping tasks.
 
 **Job id**
 * An identifier.
@@ -127,7 +130,7 @@ direction LR
 WAITING --> PROCESSING: claim
 PROCESSING --> COMPLETED: complete
 PROCESSING --> CRASHED: crash
-PROCESSING --> LAPSED: lapse
+PROCESSING --> EXPIRED: expire
 ```
 **WAITING**
 * The *job* is waiting to be processed.
@@ -145,7 +148,7 @@ PROCESSING --> LAPSED: lapse
   A critical error occurred while processing.
   A report is available with the partial test results.
 
-**LAPSED**
+**EXPIRED**
 * The *job* was already processed.
   The processing was cancelled because it took too long. 
   A report is available with the partial test results.
@@ -162,19 +165,20 @@ PROCESSING --> LAPSED: lapse
 **crash**
 * Triggered by a [worker] when a critical error occurs in the *PROCESSING* state.
 
-**lapse**
+**expire**
 * Triggered by a [dispatcher] when a *job* has been in the *PROCESSING* state for too long.
 
-[claim]: #job
+[claim]: #job-life-cycle
 [clerk]: #components
 [configuration]: #components
-[create]: #job
+[create]: #job-life-cycle
 [database]: #components
 [dispatcher]: #components
+[expire]: #job-life-cycle
 [job]: #job
 [job id]: #job
 [job request]: #components
-[processing]: #job
+[processing]: #job-life-cycle
 [question]: #components
-[waiting]: #job
+[waiting]: #job-life-cycle
 [worker]: #components
