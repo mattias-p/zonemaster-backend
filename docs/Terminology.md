@@ -76,30 +76,20 @@ UpdateElementStyle(dns, $borderColor="#888888")
 UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="3")
 ```
 
-# Glossary
+# Components
 
-### Component: Clerk
-A server that responds to [questions][question] and [job requests][job request] from users.
+* **Clerk**, component. A server that responds to [questions][question] and [job requests][job request] from users.
+* **Dispatcher**, component. A broker that [claims][claim] [WAITING] [jobs][job] and delegates their processing to [workers][worker].
+* **Worker**, component. A thread that performs [jobs][job].
 
-### Component: Dispatcher
-A broker that [claims][claim] [WAITING] [jobs][job] and delegates their processing to [workers][worker].
+# Business objects
+* **Job**, persistent business object. The principal unit of work in Zonemaster Backend. It has a [life cycle][job life cycle].
+* **Job request**, transient business object. A [clerk] receives *job requests* from users and responds to them synchronously.
+* **Question**, transient business object. A [clerk] receives *questions* from users and responds to them synchronously.
 
-### Component: Worker
-A thread that performs [jobs][job].
-
-### Unit of work: Question
-A [clerk] receives *questions* from users and responds to them synchronously.
-
-### Unit of work: Job request
-A [clerk] receives *job requests* from users and responds to them synchronously.
-
-### Unit of work: Job
-A *job* is a persistent business object.
-
+# Life cycles
+## Job life cycle
 ```mermaid
----
-title: Job life cycle
----
 stateDiagram-v2
 direction LR
 
@@ -109,52 +99,37 @@ PROCESSING --> COMPLETED: complete
 PROCESSING --> CRASHED: crash
 PROCESSING --> LAPSED: lapse
 ```
+* **WAITING**, job state. The *job* is waiting to be processed.
+* **PROCESSING**, job state. This means that a Zonemaster Engine test is being performed.
+* **COMPLETED**, job end state.
+  The *job* has been processed.
+  The Zonemaster Engine test terminated normally.
+  A report is available with the full test results.
+* **CRASHED**, job end state.
+  The *job* has been processed.
+  A critical error occurred while processing.
+  A report is available with the partial test results.
+* **LAPSED**, job end state.
+  The *job* has been processed.
+  The processing was cancelled because it took too long. 
+  A report is available with the partial test results.
+* **create**, job transition.
+  Triggered by a [clerk] when it receives a [job request] from a user and no matching *job* is available for reuse.
+* **claim**, job transition.
+  Triggered by a [dispatcher] when it notices that there is a [worker] available to process this *job*.
+* **complete**, job transition.
+  Triggered by a [worker] when the Zonemaster Engine test returns normally.
+* **crash**, job transition.
+  Triggered by a [worker] when a critical error occurs in the [PROCESSING] state.
+* **lapse**, job transition.
+  Triggered by a [dispatcher] when a *job* has been in the [PROCESSING] state too long.
 
-#### Job state: WAITING
-The *job* is waiting to be processed.
-
-#### Job state: PROCESSING
-The *job* is being processed.
-This means that a Zonemaster Engine test is being performed.
-
-#### Job state: COMPLETED
-This is an end state.
-The *job* has been processed.
-The Zonemaster Engine test terminated normally.
-A report is available with the full test results.
-
-#### Job state: CRASHED
-This is an end state.
-The *job* has been processed.
-A critical error occurred while processing.
-A report is available with the partial test results.
-
-#### Job state: LAPSED
-This is an end state.
-The *job* has been processed.
-The processing was cancelled because it took too long. 
-A report is available with the partial test results.
-
-#### Job transition: create
-Triggered by a [clerk] when it receives a [job request] from a user and no matching *job* is available for reuse.
-
-#### Job transition: claim
-Triggered by a [dispatcher] when it notices that there is a [worker] available to process this *job*.
-
-#### Job transition: complete
-Triggered by a [worker] when the Zonemaster Engine test returns normally.
-
-#### Job transition: crash
-Triggered by a [worker] when a critical error occurs in the [PROCESSING] state.
-
-#### Job transition: lapse
-Triggered by a [dispatcher] when a *job* has been in the [PROCESSING] state too long.
-
-[claim]: #job-transition-claim
-[clerk]: #component-clerk
-[dispatcher]: #component-dispatcher
-[job]: #job
-[job request]: #unit-of-work-job-request
-[question]: #unit-of-work-question
-[waiting]: #state-waiting
-[worker]: #component-worker
+[claim]: #job-life-cycle
+[clerk]: #components
+[dispatcher]: #components
+[job]: #business-objects
+[job life cycle]: #job-life-cycle
+[job request]: #business-objects
+[question]: #business-objects
+[waiting]: #job-life-cycle
+[worker]: #components
