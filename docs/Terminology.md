@@ -30,6 +30,24 @@ UpdateElementStyle(dns, $borderColor="#888888")
 UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")
 ```
 
+### Terminal user
+...
+
+### Web user
+...
+
+### Zonemaster GUI
+...
+
+### DBMS
+...
+
+### Public DNS
+...
+
+### ASN server
+...
+
 ## C4 Container diagram
 ```mermaid
 C4Container
@@ -138,7 +156,7 @@ A [job] matches a [job request] when their respective (normalized) *test paramet
 * An identifier.
 
 **Test parameters**
-* A record of parameters that affect which requests are sent to the [public dns] and [asn server] when processing the job.
+* A record of parameters that affect which requests are sent to the [public DNS] and the [ASN server] when processing the job.
 
 ### Job life cycle
 ```mermaid
@@ -189,6 +207,7 @@ PROCESSING --> EXPIRED: expire
 **expire**
 * Triggered by a [dispatcher] when a *job* has been in the *PROCESSING* state for too long.
 
+[asn server]: #asn-server
 [claim]: #job-life-cycle
 [clerk]: #clerk
 [create]: #job-life-cycle
@@ -199,6 +218,7 @@ PROCESSING --> EXPIRED: expire
 [job id]: #job
 [job request]: #clerk
 [processing]: #job-life-cycle
+[public dns]: #public-dns
 [question]: #clerk
 [rpcapi configuration]: #rpcapi-configuration
 [test agent configuration]: #test-agent-configuration
