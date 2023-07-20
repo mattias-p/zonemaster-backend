@@ -76,37 +76,51 @@ UpdateElementStyle(dns, $borderColor="#888888")
 UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="3")
 ```
 
-## Components
+## C4 Component diagram - Database
+A data store for persistent business objects.
 
-**Clerk**
-* A server that responds to *job requests* and *questions* from users.  
+{{ insert diagram here }}
 
-  **Job request**
-  * A kind of synchronous request.
+## C4 Component diagram - RPCAPI
 
-    A *clerk* responds to a *job request* by first consulting the [database] for a matching [job] that is available for reuse.
-    If there is such a job the *clerk* responds with its [job id].
-    Otherwise it triggers the [creation][create] of a new [job] and responds with that [job id] instead.
+{{ insert diagram here }}
 
-  **Question**
-  * A kind of synchronous request.
+### Clerk
+A server that responds to *job requests* and *questions* from users.  
 
-    A *clerk* responds to a *question* using information from its [configuration] and the [database].
+**Job request**
+* A synchronous request.
+  Expresses the desire to have a [job] performed asynchronously.
 
-**Configuration**
-* A data store for Zonemaster Backend settings.
+  A *clerk* responds to a *job request* by first consulting the [database] for a matching [job] that is available for reuse.
+  If there is such a job the *clerk* responds with its [job id].
+  Otherwise it triggers the [creation][create] of a new [job] and responds with that [job id] instead.
 
-**Database**
-* A data store for persistent business objects.
+**Question**
+* A synchronous request.
+  Expresses the need for some piece of information.
 
-**Dispatcher**
-* A broker that monitors and schedules the performing of [jobs].
+  A *clerk* responds to a *question* using information from the [database] and/or its [rpcapi configuration].
+  It may also query the [public DNS] to answer certain questions.
 
-  A *dispatcher* notices [jobs][job] in the [WAITING] state, [claims][claim] them and delegates their processing to [workers][worker].
-  It also [expires][expire] [jobs][job] that have been in the [PROCESSING] state for too long.
+### RPCAPI Configuration
+A data store for Zonemaster Backend settings.
 
-**Worker**
-* A thread that performs [jobs][job].
+## C4 Component diagram - Test Agent
+
+{{ insert diagram here }}
+
+### Dispatcher
+A broker that monitors and schedules the performing of [jobs].
+
+A *dispatcher* notices [jobs][job] in the [WAITING] state, [claims][claim] them and delegates their processing to [workers][worker].
+It also [expires][expire] [jobs][job] that have been in the [PROCESSING] state for too long.
+
+### Test Agent Configuration
+A data store for Zonemaster Backend settings.
+
+### Worker
+A thread that performs [jobs][job].
 
 # State
 
@@ -169,16 +183,17 @@ PROCESSING --> EXPIRED: expire
 * Triggered by a [dispatcher] when a *job* has been in the *PROCESSING* state for too long.
 
 [claim]: #job-life-cycle
-[clerk]: #components
-[configuration]: #components
+[clerk]: #clerk
 [create]: #job-life-cycle
-[database]: #components
-[dispatcher]: #components
+[database]: #database
+[dispatcher]: #dispatcher
 [expire]: #job-life-cycle
 [job]: #job
 [job id]: #job
-[job request]: #components
+[job request]: #clerk
 [processing]: #job-life-cycle
-[question]: #components
+[question]: #clerk
+[rpcapi configuration]: #rpcapi-configuration
+[test agent configuration]: #test-agent-configuration
 [waiting]: #job-life-cycle
-[worker]: #components
+[worker]: #worker
