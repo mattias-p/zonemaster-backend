@@ -91,6 +91,7 @@ A server that responds to *job requests* and *questions* from users.
 **Job request**
 * A synchronous request.
   Expresses the desire to have a [job] performed asynchronously.
+  Contains a record of [test parameters].
 
   A *clerk* responds to a *job request* by first consulting the [database] for a matching [job] that is available for reuse.
   If there is such a job the *clerk* responds with its [job id].
@@ -127,13 +128,17 @@ A thread that performs [jobs][job].
 ## Job
 A class of business objects persisted in the [database].
 The principal unit of work in Zonemaster Backend.
+Every job has a unique *job id* and contains a record of *test parameters*.
 
-Processing a *job* means executing a Zonemaster Engine test and performing associated bookkeeping tasks.
+Processing a *job* means executing a Zonemaster Engine test using the *test parameters* and performing associated bookkeeping tasks.
+
+A [job] matches a [job request] when their respective (normalized) *test parameters* records are identical.
 
 **Job id**
 * An identifier.
 
-  Every job has a unique *job id*.
+**Test parameters**
+* A record of parameters that affect which requests are sent to the [public dns] and [asn server] when processing the job.
 
 ### Job life cycle
 ```mermaid
@@ -170,6 +175,8 @@ PROCESSING --> EXPIRED: expire
 **create**
 * Triggered by a [clerk] when it receives a [job request] from a user and no matching *job* is available for reuse.
 
+  When triggering the *create* transition a *test parameters* record must be provided.
+
 **claim**
 * Triggered by a [dispatcher] when it notices that there is a [worker] available to process this *job*.
 
@@ -195,5 +202,6 @@ PROCESSING --> EXPIRED: expire
 [question]: #clerk
 [rpcapi configuration]: #rpcapi-configuration
 [test agent configuration]: #test-agent-configuration
+[test parameters]: #job
 [waiting]: #job-life-cycle
 [worker]: #worker
