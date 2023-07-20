@@ -76,24 +76,57 @@ UpdateElementStyle(dns, $borderColor="#888888")
 UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="3")
 ```
 
-# Behavior
+# Glossary
 
-Backend is all about performing jobs.
-A job is the unit of work.
-A job is identified by a job id.
+### Job
 
-End users create jobs and Test Agent performs them.
-End users can list historical jobs and get the status and result of individual jobs.
+A job is a unit of work in Zonemaster Backend.
+It follows a life cycle.
 
 ```mermaid
 ---
 title: Job life cycle
 ---
 stateDiagram-v2
+direction LR
 
-[*] --> waiting: create_new_test
-waiting --> running: claim_test
-running --> completed: store_results
-running --> crashed
-running --> lapsed
+[*] --> WAITING: request
+WAITING --> PROCESSING: claim
+PROCESSING --> COMPLETED: complete
+PROCESSING --> CRASHED: crash
+PROCESSING --> LAPSED: lapse
 ```
+
+#### State: WAITING
+
+The job is waiting to be processed.
+
+#### State: PROCESSING
+
+The job is being processed.
+This means that a Zonemaster Engine test is being performed.
+
+#### State: COMPLETED
+
+This is an end state.
+The job has been processed.
+The Zonemaster Engine test ran to completion.
+A report is available with the full test results.
+
+#### State: CRASHED
+
+This is an end state.
+The job has been processed.
+A critical error occurred while running.
+A report is available with the partial test results.
+
+#### State: LAPSED
+
+This is an end state.
+The job has been processed.
+The processing was cancelled because it took too long. 
+A report is available with the partial test results.
+
+#### Meta-State: DONE
+
+The job is in one of the COMPLETED, CRASHED or LAPSED states.
