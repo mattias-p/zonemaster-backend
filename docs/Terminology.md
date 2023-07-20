@@ -76,34 +76,49 @@ UpdateElementStyle(dns, $borderColor="#888888")
 UpdateLayoutConfig($c4ShapeInRow="2", $c4BoundaryInRow="3")
 ```
 
-# Components
+## Components
 
 **Clerk**
-* A server that responds to [questions][question] and [job requests][job request] from users.
+* A server that responds to *job requests* and *questions* from users.  
+
+  **Job request**
+  * A kind of synchronous request.
+
+    A *clerk* responds to a *job request* by first consulting the [database] for a matching [job] that is available for reuse.
+    If there is such a job the *clerk* responds with its [job id].
+    Otherwise it triggers the [creation][create] of a new [job] and responds with that [job id] instead.
+
+  **Question**
+  * A kind of synchronous request.
+
+    A *clerk* responds to a *question* using information from its [configuration] and the [database].
+
+**Configuration**
+* A data store for Zonemaster Backend settings.
+
+**Database**
+* A data store for persistent business objects.
 
 **Dispatcher**
-* A broker that [claims][claim] [WAITING] [jobs][job] and delegates their processing to [workers][worker].
+* A broker that notices and [claims][claim] [WAITING] [jobs][job] and delegates their processing to [workers][worker].
 
 **Worker**
 * A thread that performs [jobs][job].
 
-# Business objects
+# State
 
-**Job**
-* A persistent business object.
-  The principal unit of work in Zonemaster Backend.
-  Governed by the [job life cycle].
+## Job
+A class of business objects persisted in the [database].
+The principal unit of work in Zonemaster Backend.
 
-**Job request**
-* A transient business object.
-  A [clerk] receives *job requests* from users and responds to them synchronously.
+Processing a *job* means executing a Zonemaster Engine test.
 
-**Question**
-* A transient business object.
-  A [clerk] receives *questions* from users and responds to them synchronously.
+**Job id**
+* An identifier.
 
-# Life cycles
-## Job life cycle
+  Every job has a unique *job id*.
+
+### Job life cycle
 ```mermaid
 stateDiagram-v2
 direction LR
@@ -114,50 +129,52 @@ PROCESSING --> COMPLETED: complete
 PROCESSING --> CRASHED: crash
 PROCESSING --> LAPSED: lapse
 ```
-**WAITING** job state
+**WAITING**
 * The *job* is waiting to be processed.
 
-**PROCESSING** job state
-* The *job* is being processed.
-  This means that a Zonemaster Engine test is being performed.
+**PROCESSING**
+* The *job* is currently being processed.
 
-**COMPLETED** job end state
-* The *job* has been processed.
+**COMPLETED**
+* The *job* was already processed.
   The Zonemaster Engine test terminated normally.
   A report is available with the full test results.
 
-**CRASHED** job end state
-* The *job* has been processed.
+**CRASHED**
+* The *job* was already processed.
   A critical error occurred while processing.
   A report is available with the partial test results.
 
-**LAPSED** job end state
-* The *job* has been processed.
+**LAPSED**
+* The *job* was already processed.
   The processing was cancelled because it took too long. 
   A report is available with the partial test results.
 
-**create** job transition
+**create**
 * Triggered by a [clerk] when it receives a [job request] from a user and no matching *job* is available for reuse.
 
-**claim** job transition
+**claim**
 * Triggered by a [dispatcher] when it notices that there is a [worker] available to process this *job*.
 
-**complete** job transition
+**complete**
 * Triggered by a [worker] when the Zonemaster Engine test returns normally.
 
-**crash** job transition
-* Triggered by a [worker] when a critical error occurs in the [PROCESSING] state.
+**crash**
+* Triggered by a [worker] when a critical error occurs in the *PROCESSING* state.
 
-**lapse** job transition
-* Triggered by a [dispatcher] when a *job* has been in the [PROCESSING] state for too long.
+**lapse**
+* Triggered by a [dispatcher] when a *job* has been in the *PROCESSING* state for too long.
 
-[claim]: #job-life-cycle
+[claim]: #job
 [clerk]: #components
+[configuration]: #components
+[create]: #job
+[database]: #components
 [dispatcher]: #components
-[job]: #business-objects
-[job life cycle]: #job-life-cycle
-[job request]: #business-objects
-[processing]: #job-life-cycle
-[question]: #business-objects
-[waiting]: #job-life-cycle
+[job]: #job
+[job id]: #job
+[job request]: #components
+[processing]: #job
+[question]: #components
+[waiting]: #job
 [worker]: #components
