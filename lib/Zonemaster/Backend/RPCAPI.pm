@@ -404,10 +404,7 @@ sub get_test_results {
         my $test_info = $self->{db}->test_results( $params->{id} );
         foreach my $test_res ( @{ $test_info->{results} } ) {
             my $res;
-            if ( $test_res->{module} eq 'NAMESERVER' ) {
-                $res->{ns} = ( $test_res->{args}->{ns} ) ? ( $test_res->{args}->{ns} ) : ( 'All' );
-            }
-            elsif ($test_res->{module} eq 'SYSTEM'
+            if ($test_res->{module} eq 'SYSTEM'
                 && $test_res->{tag} eq 'POLICY_DISABLED'
                 && $test_res->{args}->{name} eq 'Example' )
             {
